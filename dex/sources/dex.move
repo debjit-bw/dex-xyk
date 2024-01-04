@@ -31,6 +31,15 @@ module dex::dex {
         token_y: u64,
         lp: u64
     }
+    public struct Swap has copy, drop {
+        id: ID,
+        token_in: u64,
+        token_out: u64,
+    }
+
+    const FEE_MULTIPLIER: u64 = 10000;
+
+    // error codes
     const INSUFFICIENT_LIQUIDITY: u64 = 5001;
 
     #[allow(unused_function)]
@@ -75,6 +84,8 @@ module dex::dex {
             // fees_in_X: balance::zero<X>(),
             // fees_in_Y: balance::zero<Y>()
         };
+
+        event::emit(NewPoolCreated { id: object::uid_to_inner(&pool.id) });
 
         transfer::share_object(pool);
 
