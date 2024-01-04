@@ -77,3 +77,19 @@ module dex::dex {
         coin::from_balance(lps, ctx)
     }
 
+    public fun remove_liquidity<X, Y>(pool: &mut LiquidityPool<X,Y>, lp: Balance<PoolToken<X,Y>>, ctx: &mut TxContext): (Coin<X>, Coin<Y>) {
+        let lp_supply = balance::value(&lp);
+        let total_lp_supply = balance::supply_value(&pool.pool_coin);
+        let total_token_x_supply = balance::value(&pool.token_x);
+        let total_token_y_supply = balance::value(&pool.token_y);
+
+        let token_x_to_remove = (lp_supply * total_token_x_supply) / total_lp_supply;
+        let token_y_to_remove = (lp_supply * total_token_y_supply) / total_lp_supply;
+
+        let token_x = balance::split(&mut pool.token_x, token_x_to_remove);
+        let token_y = balance::split(&mut pool.token_y, token_y_to_remove);
+
+        let decrease = balance::decrease_supply(&mut pool.pool_coin, lp);
+
+        (coin::from_balance(token_x, ctx), coin::from_balance(token_y, ctx))
+    }
