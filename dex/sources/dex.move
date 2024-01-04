@@ -129,6 +129,28 @@ module dex::dex {
         (coin::from_balance(token_x, ctx), coin::from_balance(token_y, ctx))
     }
 
+    public fun swap_X_to_Y<X,Y>(pool: &mut LiquidityPool<X,Y>, token_x: Balance<X>, ctx: &mut TxContext): Option<Coin<Y>> {
+        let x_in = balance::value(&token_x) * (FEE_MULTIPLIER - pool.fee_bps) / FEE_MULTIPLIER;
+        let y_out = (balance::value(&pool.token_y) * x_in) / (balance::value(&pool.token_x) + x_in);
+
+        assert!(y_out > 0 && y_out <= balance::value(&pool.token_y), INSUFFICIENT_LIQUIDITY);
+
+        event::emit(Swap { id: object::uid_to_inner(&pool.id), token_in: x_in, token_out: y_out });
+
+        let _ = balance::join(&mut pool.token_x, token_x);
+        option::some<Coin<Y>>(coin::from_balance(balance::split(&mut pool.token_y, y_out), ctx))
+    }
+
+    public fun swap_Y_to_X<X,Y>(pool: &mut LiquidityPool<X,Y>, token_y: Balance<Y>, ctx: &mut TxContext): Option<Coin<X>> {
+        let y_in = balance::value(&token_y) * (FEE_MULTIPLIER - pool.fee_bps) / FEE_MULTIPLIER;
+        let x_out = (balance::value(&pool.token_x) * y_in) / (balance::value(&pool.token_y) + y_in);
+
+        assert!(x_out > 0 && x_out <= balance::value(&pool.token_x), INSUFFICIENT_LIQUIDITY);
+
+        event::emit(Swap { id: object::uid_to_inner(&pool.id), token_in: y_in, token_out: x_out });
+
+        let _ = balance::join(&mut pool.token_y, token_y);
+        option::some<Coin<X>>(coin::from_balance(balance::split(&mut pool.token_x, x_out), ctx))
     }
 
 }
